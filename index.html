@@ -77,7 +77,7 @@ async function actualizarBarra() {
     let color = "green";
     if (retro >= 1 && retro <= 3) color = "yellow";
     if (retro >= 4 && retro <= 6) color = "orange";
-    if (retro >= 7) color = "red";
+    if (retro >= 7 && retro <= 8) color = "red";
 
     barra.style.backgroundColor = color;
 
@@ -88,7 +88,7 @@ async function actualizarBarra() {
     texto.style.animation = "none";
     texto.textContent = "Error";
     texto.style.display = "block";
-    console.error("Error al cargar el gadget:", e);
+    console.error("Error al obtener datos", e);
   }
 }
 
