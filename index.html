@@ -1,75 +1,86 @@
-<!DOCTYPE html><html lang="es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Indicador E-Flow</title>
 <link rel="icon" href="https://img.icons8.com/fluency/10000/flow.png">
 <link href="https://fonts.cdnfonts.com/css/product-sans" rel="stylesheet">
+
 <style>
-  body { 
-    font-family: 'Product Sans', sans-serif; 
-    padding: 20px; 
-  }h2 {
-margin-bottom: 15px;
-text-align: center; /* Centrar el título */
+body { 
+  font-family: 'Product Sans', sans-serif; 
+  padding: 20px; 
+}
+
+h2 {
+  margin-bottom: 15px;
+  text-align: center;
 }
 
 #barraRetro {
-width: 80px;
-height: 20px;
-border-radius: 20px;
-background-color: grey;
-color: white;
-font-size: 10px;
-font-weight: bold;
-text-align: center;
-font-family: 'Product Sans', sans-serif;
-line-height: 20px;
-overflow: hidden;
-position: relative;
-transition: background-color 0.3s ease;
-margin: 0 auto 20px auto; /* Centrar la barra */
+  width: 80px;
+  height: 20px;
+  border-radius: 20px;
+  background-color: grey;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  text-align: center;
+  line-height: 20px;
+  overflow: hidden;
+  position: relative;
+  transition: background-color 0.3s ease;
+  margin: 0 auto 20px auto;
 }
 
-/* Animación de parpadeo Cargando */
+/* Animación Cargando */
 @keyframes fade {
-0%, 100% { opacity: 0; }
-50% { opacity: 1; }
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
 }
 
 #barraTexto {
-position: absolute;
-width: 100%;
-top: 0;
-left: 0;
-line-height: 20px;
-animation: fade 1s infinite;
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 0;
+  line-height: 20px;
+  animation: fade 1s infinite;
 }
-</style>
 
-<style>
 h6 {
-    text-align: justify;
+  text-align: justify;
 }
 </style>
-
 </head>
-<body><h2>Flujo de energía ambiente</h2>
 
-<h6>La barra muestra en tiempo real el estado del flujo energético ambiental mediante colores de estado, que van comprendidos entre un estado óptimo (verde) y un estado crítico (rojo). El efecto palpable es a nivel general. Un estado óptimo indica que las energías influyentes suelen ser fluidas, mientras que un estado crítico muestra energías influyentes menos fluidas o "bloqueos" energéticos que afectan la sociedad o el ambiente circundante. ESTO APUNTA A LA TENDENCIA COLECTIVA, PERO NO A LA INDIVIDUAL, YA QUE ESTE ÚLTIMO DEPENDE MUCHO DE LA IDIOSINCRASIA. Solo se tienen en cuenta las energías más importantes y principales. Las energías pueden fluctuar en meses.<br><br>Si persiste "Error" pruebe borrar la caché de su navegador.</h6>
+<body>
+
+<h2>Flujo de energía ambiente</h2>
+
+<h6>
+La barra muestra en tiempo real el estado del flujo energético ambiental mediante colores de estado, que van comprendidos entre un estado óptimo (verde) y un estado crítico (rojo). El efecto palpable es a nivel general. Un estado óptimo indica que las energías influyentes suelen ser fluidas, mientras que un estado crítico muestra energías influyentes menos fluidas o "bloqueos" energéticos que afectan la sociedad o el ambiente circundante. ESTO APUNTA A LA TENDENCIA COLECTIVA, PERO NO A LA INDIVIDUAL, YA QUE ESTE ÚLTIMO DEPENDE MUCHO DE LA IDIOSINCRASIA. Solo se tienen en cuenta las energías más importantes y principales. Las energías pueden fluctuar en meses.
+<br><br>
+Si persiste "Error", pruebe borrar la caché de su navegador.
+</h6>
 
 <div id="barraRetro">
   <div id="barraTexto">Cargando…</div>
-</div><script>
+</div>
+
+<script>
 const barra = document.getElementById("barraRetro");
 const texto = document.getElementById("barraTexto");
 
 async function actualizarBarra() {
   try {
-    const url = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://carta-natal.es/gadgets/ahora') + '&_=' + Date.now();
-    const response = await fetch(url);
-    const data = await response.json();
-    const html = data.contents;
+    const url = 'https://api.allorigins.win/raw?url=' 
+      + encodeURIComponent('https://carta-natal.es/gadgets/ahora') 
+      + '&_=' + Date.now();
+
+    const response = await fetch(url, { cache: "no-store" });
+    const html = await response.text();
 
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
@@ -78,14 +89,13 @@ async function actualizarBarra() {
     const retro = (contenido.match(/R\b/g) || []).length;
 
     let color = "green";
-    if (retro >= 0 && retro <= 3) color = "yellow";
+    if (retro >= 1 && retro <= 3) color = "yellow";
     if (retro >= 4 && retro <= 6) color = "orange";
     if (retro >= 7 && retro <= 8) color = "red";
 
     barra.style.backgroundColor = color;
-
-    // Ocultar texto de Cargando cuando se carga color
     texto.style.display = "none";
+
   } catch (e) {
     barra.style.backgroundColor = "grey";
     texto.style.animation = "none";
@@ -95,14 +105,11 @@ async function actualizarBarra() {
   }
 }
 
-// Ejecutar inmediatamente
 actualizarBarra();
-
-// Actualizar cada minuto (60000 ms)
 setInterval(actualizarBarra, 60000);
 </script>
 
-<h5><font color="#ff0000">Error 522.</h5><h6>El servicio Proxy está trabajando para solucionar el problema…<br>Inténtelo de nuevo en otro momento.</font></h6>
+<!-- <h5><font color="#ff0000">Error 522.</h5><h6>El servicio Proxy está trabajando para solucionar el problema…<br>Inténtelo de nuevo en otro momento.</font></h6> -->
 
 </body>
 </html>
