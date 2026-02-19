@@ -66,7 +66,7 @@ const texto = document.getElementById("barraTexto");
 
 async function actualizarBarra() {
   try {
-    const url = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://carta-natal.es/gadgets/ahora') + '&_=' + Date.now();
+    const url = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://carta-natal.es/gadgets/ahora') + '&_=' + Date.now();
     const response = await fetch(url);
     const data = await response.json();
     const html = data.contents;
@@ -78,7 +78,7 @@ async function actualizarBarra() {
     const retro = (contenido.match(/R\b/g) || []).length;
 
     let color = "green";
-    if (retro >= 1 && retro <= 3) color = "yellow";
+    if (retro >= 0 && retro <= 3) color = "yellow";
     if (retro >= 4 && retro <= 6) color = "orange";
     if (retro >= 7 && retro <= 8) color = "red";
 
@@ -100,5 +100,9 @@ actualizarBarra();
 
 // Actualizar cada minuto (60000 ms)
 setInterval(actualizarBarra, 60000);
-</script></body>
+</script>
+
+<h5><font color="#ff0000">Error 522.</h5><h6>El servicio Proxy está trabajando para solucionar el problema…<br>Inténtelo de nuevo en otro momento.</font></h6>
+
+</body>
 </html>
