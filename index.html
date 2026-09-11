@@ -61,8 +61,6 @@ h6 {
 
 <h6>
 La barra muestra en tiempo real el estado del flujo energético ambiental mediante colores de estado, que van comprendidos entre un estado óptimo (verde) y un estado crítico (rojo). El efecto palpable es a nivel general. Un estado óptimo indica que las energías influyentes suelen ser fluidas, mientras que un estado crítico muestra energías influyentes menos fluidas o "bloqueos" energéticos que afectan la sociedad o el ambiente circundante. ESTO APUNTA A LA TENDENCIA COLECTIVA, PERO NO A LA INDIVIDUAL, YA QUE ESTE ÚLTIMO DEPENDE MUCHO DE LA IDIOSINCRASIA. Solo se tienen en cuenta las energías más importantes y principales. Las energías pueden fluctuar en meses.
-<br><br>
-Si persiste "Error", pruebe borrar la caché de su navegador.<br><font color="red">Recargue la página al menos hasta 3 veces para asegurar el resultado, ya que puede cometer errores por tiempo insuficiente de cálculo.</font>
 </h6>
 
 <div id="barraRetro">
@@ -70,46 +68,286 @@ Si persiste "Error", pruebe borrar la caché de su navegador.<br><font color="re
 </div>
 
 <script>
+
 const barra = document.getElementById("barraRetro");
 const texto = document.getElementById("barraTexto");
 
+/*
+  PLANETAS QUE PUEDEN ESTAR RETRÓGRADOS
+
+  Sol y Luna quedan excluidos porque nunca tienen
+  movimiento retrógrado.
+
+  Los nodos lunares también quedan excluidos.
+*/
+
+const planetasPrincipales = [
+  "Mercury",
+  "Venus",
+  "Mars",
+  "Jupiter",
+  "Saturn",
+  "Uranus",
+  "Neptune",
+  "Pluto"
+];
+
+
 async function actualizarBarra() {
+
   try {
-    const url = 'https://api.allorigins.win/raw?url=' 
-      + encodeURIComponent('https://carta-natal.es/gadgets/ahora') 
-      + '&_=' + Date.now();
 
-    const response = await fetch(url, { cache: "no-store" });
-    const html = await response.text();
+    /*
+      CosmyDay utiliza /natal para calcular las posiciones
+      planetarias mediante Swiss Ephemeris.
 
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    const contenido = tempDiv.innerText;
+      Las coordenadas solamente son necesarias para que
+      el endpoint pueda calcular la carta. El estado
+      retrógrado de los planetas es global y no depende
+      de la ubicación geográfica.
+    */
 
-    const retro = (contenido.match(/R\b/g) || []).length;
+    const ahora = new Date();
+
+    const datos = {
+      year: ahora.getFullYear(),
+      month: ahora.getMonth() + 1,
+      day: ahora.getDate(),
+      hour: ahora.getHours(),
+      minute: ahora.getMinutes(),
+
+      // Coordenadas utilizadas únicamente para satisfacer
+      // los requisitos del endpoint /natal.
+      lat: 40.4168,
+      lon: -3.7038
+    };
+
+
+    const response = await fetch(
+      "https://api.cosmyday.com/natal",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify(datos),
+
+        cache: "no-store"
+      }
+    );
+
+
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status);
+    }
+
+
+    const data = await response.json();
+
+
+    /*
+      CosmyDay puede devolver las posiciones dentro
+      de diferentes estructuras dependiendo de la
+      versión del endpoint.
+
+      Buscamos automáticamente la colección planetaria.
+    */
+
+    let planetas = null;
+
+    if (Array.isArray(data.planets)) {
+      planetas = data.planets;
+    }
+
+    else if (Array.isArray(data.planet_positions)) {
+      planetas = data.planet_positions;
+    }
+
+    else if (Array.isArray(data.positions)) {
+      planetas = data.positions;
+    }
+
+    else if (data.chart && Array.isArray(data.chart.planets)) {
+      planetas = data.chart.planets;
+    }
+
+    else if (data.chart && Array.isArray(data.chart.planet_positions)) {
+      planetas = data.chart.planet_positions;
+    }
+
+
+    /*
+      Algunas respuestas pueden utilizar directamente
+      un objeto con los planetas.
+    */
+
+    if (!planetas && data.planets && typeof data.planets === "object") {
+      planetas = Object.entries(data.planets).map(
+        ([planet, valores]) => ({
+          planet,
+          ...valores
+        })
+      );
+    }
+
+
+    if (!planetas || !Array.isArray(planetas)) {
+      throw new Error("No se encontraron posiciones planetarias");
+    }
+
+
+    let retrogrados = 0;
+
+
+    /*
+      Revisamos únicamente:
+
+      Mercurio
+      Venus
+      Marte
+      Júpiter
+      Saturno
+      Urano
+      Neptuno
+      Plutón
+    */
+
+    for (const planeta of planetas) {
+
+      const nombre =
+        planeta.planet ||
+        planeta.name ||
+        planeta.body ||
+        planeta.id ||
+        "";
+
+
+      const nombreNormalizado =
+        String(nombre).toLowerCase();
+
+
+      const corresponde = planetasPrincipales.some(
+        p => p.toLowerCase() === nombreNormalizado
+      );
+
+
+      if (!corresponde) {
+        continue;
+      }
+
+
+      /*
+        Primera posibilidad:
+        la API proporciona directamente
+        retrograde: true / false
+      */
+
+      let esRetrogrado = null;
+
+
+      if (typeof planeta.retrograde === "boolean") {
+        esRetrogrado = planeta.retrograde;
+      }
+
+      else if (typeof planeta.is_retrograde === "boolean") {
+        esRetrogrado = planeta.is_retrograde;
+      }
+
+      else if (typeof planeta.isRetrograde === "boolean") {
+        esRetrogrado = planeta.isRetrograde;
+      }
+
+
+      /*
+        Segunda posibilidad:
+        la API proporciona la velocidad.
+
+        Una velocidad longitudinal negativa
+        significa movimiento retrógrado.
+      */
+
+      if (esRetrogrado === null) {
+
+        const velocidad =
+          planeta.speed ??
+          planeta.velocity ??
+          planeta.longitude_speed ??
+          planeta.longitudeSpeed;
+
+
+        if (typeof velocidad === "number") {
+          esRetrogrado = velocidad < 0;
+        }
+      }
+
+
+      if (esRetrogrado === true) {
+        retrogrados++;
+      }
+
+    }
+
+
+    /*
+      MISMOS COLORES QUE TU PÁGINA ORIGINAL
+    */
 
     let color = "green";
-    if (retro >= 1 && retro <= 3) color = "yellow";
-    if (retro >= 4 && retro <= 6) color = "orange";
-    if (retro >= 7) color = "red";
+
+    if (retrogrados >= 1 && retrogrados <= 3) {
+      color = "yellow";
+    }
+
+    if (retrogrados >= 4 && retrogrados <= 6) {
+      color = "orange";
+    }
+
+    if (retrogrados >= 7) {
+      color = "red";
+    }
+
 
     barra.style.backgroundColor = color;
+
     texto.style.display = "none";
 
+
   } catch (e) {
+
     barra.style.backgroundColor = "grey";
+
     texto.style.animation = "none";
+
     texto.textContent = "Error";
+
     texto.style.display = "block";
-    console.error("Error al obtener datos", e);
+
+    console.error(
+      "Error al obtener datos de CosmyDay:",
+      e
+    );
+
   }
+
 }
 
-actualizarBarra();
-setInterval(actualizarBarra, 60000);
-</script>
 
-<!-- <h5><font color="#ff0000">Error 522.</h5><h6>El servicio Proxy está trabajando para solucionar el problema…<br>Inténtelo de nuevo en otro momento.</font></h6> -->
+/*
+  Primera consulta inmediata.
+*/
+
+actualizarBarra();
+
+
+/*
+  Actualización cada minuto.
+*/
+
+setInterval(actualizarBarra, 60000);
+
+</script>
 
 </body>
 </html>
